@@ -1,6 +1,6 @@
 /* PisoCheck — glue: detect a listing page, extract it, ask the worker, render the panel.
    Idealista navigates client-side, so the URL is polled and the panel re-runs on change. */
-import { extract, isListingPage } from './extract.js';
+import { extract, isListingPage } from './portals/index.js';
 import { Panel } from './panel.js';
 import type { AnalyzeResponse, Message, Settings } from './types.js';
 

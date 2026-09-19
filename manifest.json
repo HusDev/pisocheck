@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "PisoCheck \u2014 Idealista rental risk check",
-  "version": "0.1.0",
-  "description": "Instant scam and risk scores for Idealista rental listings in Spain, powered by Jev.",
+  "name": "PisoCheck \u2014 rental risk check for Spain",
+  "version": "0.2.0",
+  "description": "Instant scam and risk scores on Idealista, Fotocasa, pisos.com and habitaclia rental listings, powered by Jev.",
   "permissions": [
     "storage",
     "activeTab"
@@ -33,8 +33,9 @@
     {
       "matches": [
         "https://www.idealista.com/*",
-        "https://www.idealista.it/*",
-        "https://www.idealista.pt/*"
+        "https://www.fotocasa.es/*",
+        "https://www.pisos.com/*",
+        "https://www.habitaclia.com/*"
       ],
       "js": [
         "content.js"

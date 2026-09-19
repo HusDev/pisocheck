@@ -1,6 +1,10 @@
 # PisoCheck
 
-**A Chrome extension that instantly analyses Idealista rental listings anywhere in Spain and tells you whether they are worth contacting or should be skipped.**
+**A Chrome extension that instantly analyses rental listings on Spain's four biggest
+portals and tells you whether they are worth contacting or should be skipped.**
+
+Covers **idealista.com**, **fotocasa.es**, **pisos.com** and **habitaclia.com** — about 90%
+of Spanish rental search traffic (55.5M of ~62M monthly visits).
 
 ---
 
@@ -67,7 +71,13 @@ Written in TypeScript, bundled with esbuild. **`dist/` is what Chrome loads**, n
 ```
 src/types.ts         Listing, the TypeSafe API shapes, verdict and message types
 src/questions.ts     The Jev questions + the risk policy (weights, thresholds, labels)
-src/extract.ts       Reads the listing off the page (utag_data first, DOM selectors as fallback)
+src/portals/         One adapter per portal, all returning the same Listing
+  shared.ts          Locale-aware number parsing, room/studio detection, helpers
+  idealista.ts       utag_data when present, DOM selectors as fallback
+  fotocasa.ts        Reads the <script id="__initial_props__"> JSON payload
+  pisos.ts           Server-rendered HTML
+  habitaclia.ts      Server-rendered HTML
+  index.ts           Registry: host -> adapter
 src/background.ts    Service worker: holds the key, one call to api.typesafe.ai, caches + history
 src/panel.ts         The on-page panel (shadow DOM, no clash with Idealista CSS)
 src/content.ts       Glue: detect listing page → extract → ask → render, re-runs on SPA navigation
@@ -131,7 +141,17 @@ Measured on real listings (`jev-1.13.0`, ~1.6k input tokens, 300–950 ms per ca
 | Private flat with no photos, text or phone | 46% | 26% | Caution — nothing to verify |
 | Synthetic scam room, 350 € Barcelona | 86% | 94% | Skip |
 | Scam-shaped flat, 500 €/90 m² Madrid | 84% | 93% | Skip |
+| Fotocasa: Uniplaces studio, El Raval | 28% | 26% | Caution — 32-day minimum stay |
+| Habitaclia: penthouse, Sant Gervasi | 11% | 13% | Strong candidate |
 | Agency flat, 1600 €/75 m² Madrid | 9% | 10% | Strong candidate |
+
+### Adding a portal
+
+Write an adapter in `src/portals/` exporting `{ id, handles, isListingPage, extract }`,
+add it to the registry and add the domain to `content_scripts.matches`. Nothing else
+changes: the questions, the scoring, the panel and the worker never learn which site a
+listing came from. Check for a JSON payload before writing selectors — Fotocasa ships its
+whole listing as JSON, which beats any CSS selector for stability.
 
 ### Extraction is the hard part
 

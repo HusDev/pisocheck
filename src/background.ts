@@ -87,6 +87,7 @@ function summarize(listing: Listing): ListingSummary {
     advertiser_type: listing.advertiser_type,
     agency_profile_url: listing.agency_profile_url,
     agency_has_idealista_profile: listing.agency_has_idealista_profile,
+    portal: listing.portal,
     city: listing.city,
     price_eur_month: listing.price_eur_month,
     size_m2: listing.size_m2,

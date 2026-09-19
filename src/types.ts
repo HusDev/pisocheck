@@ -1,11 +1,15 @@
 // Shapes shared across the extension: what we read off the page, what the Jev API
 // returns, and what the panel renders.
 
-/** A listing as extracted from an Idealista page. Every field can be absent: the page
+/** The portals PisoCheck can read. Together these cover roughly 90% of Spanish
+ *  rental search traffic. */
+export type PortalId = 'idealista' | 'fotocasa' | 'pisos' | 'habitaclia';
+
+/** A listing as extracted from a portal page. Every field can be absent: the page
  *  may not state it, and an absence is itself information the model should see. */
 export interface Listing {
   url: string;
-  portal: 'idealista';
+  portal: PortalId;
   listing_id: string | null;
   operation: string | null;
   property_type: string | null;
@@ -60,6 +64,7 @@ export type ListingSummary = Pick<
   | 'advertiser_type'
   | 'agency_profile_url'
   | 'agency_has_idealista_profile'
+  | 'portal'
   | 'city'
   | 'price_eur_month'
   | 'size_m2'
