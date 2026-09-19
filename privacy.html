@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PisoCheck privacy policy</title>
+<meta name="description" content="What PisoCheck sends, where it goes, and what it keeps.">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff; --fg: #10151c; --muted: #5b6673; --line: #e4e9ef; --accent: #12b76a;
+    --card: #f8fafc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0f1419; --fg: #e8edf3; --muted: #9aa6b5; --line: #232a33; --card: #151a21; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 0 20px;
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 56px 0 96px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: .2px; }
+  .dot { width: 22px; height: 22px; border-radius: 50%; border: 4px solid var(--accent); border-top-color: var(--line); }
+  h1 { font-size: 30px; line-height: 1.2; margin: 26px 0 6px; }
+  .updated { color: var(--muted); font-size: 14px; margin: 0 0 30px; }
+  h2 { font-size: 19px; margin: 38px 0 10px; }
+  p, li { color: var(--fg); }
+  .lead { font-size: 17px; color: var(--muted); }
+  strong { font-weight: 650; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 15px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .4px; }
+  code { background: var(--card); padding: 1px 5px; border-radius: 5px; font-size: 14px; }
+  a { color: inherit; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+  .callout { background: var(--card); border-left: 3px solid var(--accent); padding: 14px 16px; border-radius: 0 8px 8px 0; margin: 20px 0; }
+  footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="brand"><span class="dot"></span> PisoCheck</div>
+  <h1>Privacy policy</h1>
+  <p class="updated">Last updated: 19 September 2026</p>
+
+  <p class="lead">PisoCheck analyses rental listings you are already looking at and shows you a
+  risk assessment. This page explains exactly what it sends, where, and what it keeps.</p>
+
+  <h2>What PisoCheck collects about you</h2>
+  <p><strong>Nothing.</strong> There is no account, no sign-up, no email address, no analytics,
+  no advertising and no tracking of any kind. PisoCheck does not read your browsing history,
+  your other tabs, your bookmarks or your saved passwords.</p>
+
+  <h2>What is sent, and when</h2>
+  <p>PisoCheck acts only on Idealista listing pages, and only for the listing you have open.
+  When a listing is analysed it sends the <strong>public content of that advert</strong> — price,
+  size, rooms, neighbourhood, features, the advertiser's public name and the description text —
+  to its analysis service at <code>pisocheck-proxy.hussein-saad-hasan.workers.dev</code>, which
+  forwards it to TypeSafe (<code>api.typesafe.ai</code>) for scoring.</p>
+  <p>That information is public on the listing page. PisoCheck does not send your name, your
+  messages to advertisers, your Idealista account details, or anything you type.</p>
+  <div class="callout">Nothing is sent on any other website, and nothing is sent until a listing
+  is analysed. You can switch off automatic analysis in the options page, so nothing leaves the
+  browser until you click.</div>
+
+  <h2>The device identifier</h2>
+  <p>So that the free service cannot be abused, PisoCheck generates a <strong>random
+  identifier</strong> when you install it and includes it with each analysis. It is a random
+  number stored on your device. It is not derived from you, your hardware or your browser, and
+  it cannot be used to identify you. It is used only to count how many checks are made in a day.
+  Uninstalling the extension or clearing its storage discards it permanently.</p>
+
+  <h2>What is stored, and where</h2>
+  <table>
+    <tr><th>Data</th><th>Where</th><th>How long</th></tr>
+    <tr><td>Results of listings you checked</td><td>Your browser only</td><td>24 hours</td></tr>
+    <tr><td>Your settings and optional API key</td><td>Your browser (Chrome sync storage)</td><td>Until you remove them</td></tr>
+    <tr><td>Random device identifier</td><td>Your browser</td><td>Until you uninstall</td></tr>
+    <tr><td>Daily check counts</td><td>Analysis service</td><td>24 hours, then deleted</td></tr>
+  </table>
+  <p>PisoCheck does not keep copies of the listings you check. TypeSafe states that it does not
+  train on API requests or responses; see
+  <a href="https://docs.typesafe.ai/legal">docs.typesafe.ai/legal</a>.</p>
+
+  <h2>Sharing and selling</h2>
+  <p>PisoCheck does not sell, rent or share any data with anyone. There are no third-party
+  trackers, no advertising networks and no data brokers. The only external services involved are
+  the two named above, both of which are needed to produce the score.</p>
+
+  <h2>Your control</h2>
+  <ul>
+    <li>Turn off automatic analysis in the options page: nothing is sent until you click.</li>
+    <li>Use your own TypeSafe API key and requests go directly to TypeSafe, never through the
+    PisoCheck service.</li>
+    <li>Uninstall the extension and everything stored locally is removed with it.</li>
+  </ul>
+
+  <h2>Accuracy</h2>
+  <p>PisoCheck gives an automated, probabilistic estimate to help you decide where to spend your
+  time. It is not a verdict about any advertiser, agency or property, it is not professional or
+  legal advice, and it can be wrong in both directions. Always check a property and a landlord
+  yourself before paying anything.</p>
+
+  <h2>Contact</h2>
+  <p>Questions or removal requests:
+  <a href="https://github.com/HusDev/pisocheck/issues">github.com/HusDev/pisocheck/issues</a></p>
+
+  <footer>PisoCheck is open source:
+  <a href="https://github.com/HusDev/pisocheck">github.com/HusDev/pisocheck</a>.
+  Not affiliated with idealista.</footer>
+</main>
+</body>
+</html>
