@@ -2,7 +2,16 @@
 // The content script becomes one bundle, so its modules import each other properly
 // instead of passing objects through window globals.
 import * as esbuild from 'esbuild';
-import { cp, mkdir, rm } from 'node:fs/promises';
+import { cp, mkdir, readFile, rm } from 'node:fs/promises';
+
+// The manifest version is what Chrome ships; package.json only names the zip. Let them
+// drift and you upload a file labelled with the wrong version.
+const pkg = JSON.parse(await readFile('package.json', 'utf8'));
+const manifest = JSON.parse(await readFile('manifest.json', 'utf8'));
+if (pkg.version !== manifest.version) {
+  console.error(`version mismatch: package.json ${pkg.version} vs manifest.json ${manifest.version}`);
+  process.exit(1);
+}
 
 const watch = process.argv.includes('--watch');
 const dev = watch || process.argv.includes('--dev');
