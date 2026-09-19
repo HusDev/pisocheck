@@ -8,7 +8,8 @@
     "build": "node scripts/build.mjs",
     "watch": "node scripts/build.mjs --watch",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run build"
+    "check": "npm run typecheck && npm run build",
+    "package": "npm run check && cd dist && zip -qr ../pisocheck-$npm_package_version.zip . -x '.*' && cd .. && echo \"packaged pisocheck-$npm_package_version.zip\""
   },
   "devDependencies": {
     "@types/chrome": "^0.0.287",

@@ -78,6 +78,7 @@ scripts/build.mjs    esbuild bundle + static copy into dist/
 ```bash
 npm install
 npm run build       # → dist/
+npm run package     # → pisocheck-<version>.zip for the Chrome Web Store
 npm run watch       # rebuild on save (still reload the extension in chrome://extensions)
 npm run typecheck   # tsc --noEmit
 npm run check       # typecheck then build
