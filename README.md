@@ -140,10 +140,28 @@ separately — they differ in number formatting and wording.
 
 ## Keys and privacy
 
-The key lives in `chrome.storage.sync` and is sent only to `api.typesafe.ai`. For a shared or
-public build, run a small proxy that adds the `Authorization` header and set its URL in the
-options page — the extension then sends no key at all. Listing data leaves the browser only
-when a listing is analysed; verdicts are cached locally for 24 h.
+**Users do not need a TypeSafe key.** The extension calls a small Cloudflare Worker
+(`proxy/`) that holds the key as a secret and meters a free daily allowance per install.
+The extension ships with no credentials in it.
+
+Three ways it can run:
+
+| Mode | Who pays | Setup for the user |
+| --- | --- | --- |
+| Shared proxy (default) | You | None — install and go, 15 checks/day |
+| Licence key | You, higher allowance | Paste a key in options |
+| Own API key | The user, unmetered | Paste a TypeSafe key in options |
+
+A user's own key always takes priority and goes straight to `api.typesafe.ai`, never
+through the proxy.
+
+The proxy meters by an anonymous device id: a random UUID minted on install and stored
+locally. It identifies a browser profile, not a person — no account, no email, no
+personal data. Listing content leaves the browser only when a listing is analysed, and
+verdicts are cached locally for 24 h.
+
+See `proxy/README.md` for deployment, the cost model ($0.00007 per check) and how to
+add a paid tier.
 
 ## Future Vision
 

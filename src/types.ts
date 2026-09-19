@@ -159,6 +159,8 @@ export interface AnalysisResult extends VerdictResult {
   model: string;
   at: number;
   cached?: boolean;
+  /** Present only when the shared proxy answered; null when using your own key. */
+  quota?: { used: number; limit: number; plan: string } | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -169,6 +171,8 @@ export interface Settings {
   apiKey: string;
   proxyUrl: string;
   autoRun: boolean;
+  /** Unlocks a higher daily allowance on the shared proxy. */
+  license: string;
 }
 
 export type Message =

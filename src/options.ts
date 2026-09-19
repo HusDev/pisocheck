@@ -15,10 +15,11 @@ interface HistoryEntry {
 }
 
 void chrome.storage.sync
-  .get(['apiKey', 'proxyUrl', 'autoRun'])
-  .then(({ apiKey = '', proxyUrl = '', autoRun = true }: Partial<Settings>) => {
+  .get(['apiKey', 'proxyUrl', 'autoRun', 'license'])
+  .then(({ apiKey = '', proxyUrl = '', autoRun = true, license = '' }: Partial<Settings>) => {
     $<HTMLInputElement>('apiKey').value = apiKey;
     $<HTMLInputElement>('proxyUrl').value = proxyUrl;
+    $<HTMLInputElement>('license').value = license;
     $<HTMLInputElement>('autoRun').checked = autoRun !== false;
   });
 
@@ -26,7 +27,8 @@ $<HTMLButtonElement>('save').onclick = async () => {
   await chrome.storage.sync.set({
     apiKey: $<HTMLInputElement>('apiKey').value.trim(),
     proxyUrl: $<HTMLInputElement>('proxyUrl').value.trim(),
-    autoRun: $<HTMLInputElement>('autoRun').checked
+    autoRun: $<HTMLInputElement>('autoRun').checked,
+    license: $<HTMLInputElement>('license').value.trim()
   } satisfies Settings);
   const status = $('status');
   status.textContent = 'Saved';

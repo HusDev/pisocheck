@@ -26,9 +26,15 @@
   <h1>PisoCheck</h1>
   <p class="sub">Scam and risk checks for Idealista listings, powered by Jev.</p>
 
-  <label for="apiKey">TypeSafe API key</label>
+  <p class="sub" id="planline">PisoCheck works out of the box with a free daily allowance. The fields below are optional.</p>
+
+  <label for="license">Licence key (optional)</label>
+  <input id="license" type="text" placeholder="PC-..." autocomplete="off">
+  <div class="hint">Raises your daily allowance. Leave empty to stay on the free tier.</div>
+
+  <label for="apiKey">Your own TypeSafe API key (optional)</label>
   <input id="apiKey" type="password" placeholder="sk-..." autocomplete="off">
-  <div class="hint">Get one at console.typesafe.ai/settings/keys. Stored in Chrome sync storage and sent only to api.typesafe.ai.</div>
+  <div class="hint">Bring your own key from console.typesafe.ai/settings/keys and checks go straight to TypeSafe, unmetered and billed to you. Stored in Chrome sync storage and sent only to api.typesafe.ai.</div>
 
   <label for="proxyUrl">Proxy endpoint (optional)</label>
   <input id="proxyUrl" type="text" placeholder="https://your-server.example/systemone">

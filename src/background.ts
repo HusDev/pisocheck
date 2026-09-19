@@ -10,6 +10,10 @@ import type {
   SystemOneResponse
 } from './types.js';
 
+// Where checks go when the user has set nothing. Point this at your deployed Worker
+// and the extension works on install: no key, no setup. Direct calls to TypeSafe
+// happen only when someone supplies their own key in the options page.
+const DEFAULT_PROXY = '';
 const ENDPOINT = 'https://api.typesafe.ai/v1/systemone';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const HISTORY_MAX = 50;
@@ -33,12 +37,23 @@ class ApiError extends Error {
 }
 
 async function settings(): Promise<Settings> {
-  const { apiKey = '', proxyUrl = '', autoRun = true } = await chrome.storage.sync.get([
+  const { apiKey = '', proxyUrl = '', autoRun = true, license = '' } = await chrome.storage.sync.get([
     'apiKey',
     'proxyUrl',
-    'autoRun'
+    'autoRun',
+    'license'
   ]);
-  return { apiKey, proxyUrl, autoRun };
+  return { apiKey, proxyUrl: proxyUrl || DEFAULT_PROXY, autoRun, license };
+}
+
+/** An anonymous per-install id so the proxy can meter a free tier. It identifies a
+ *  browser profile, never a person: no account, no email, nothing tied to the user. */
+async function deviceId(): Promise<string> {
+  const { deviceId } = (await chrome.storage.local.get('deviceId')) as { deviceId?: string };
+  if (deviceId) return deviceId;
+  const fresh = crypto.randomUUID();
+  await chrome.storage.local.set({ deviceId: fresh });
+  return fresh;
 }
 
 async function cacheGet(url: string): Promise<AnalysisResult | null> {
@@ -81,9 +96,11 @@ function summarize(listing: Listing): ListingSummary {
 }
 
 async function askJev(listing: Listing): Promise<AnalysisResult> {
-  const { apiKey, proxyUrl } = await settings();
-  const endpoint = proxyUrl || ENDPOINT;
-  if (!proxyUrl && !apiKey) {
+  const { apiKey, proxyUrl, license } = await settings();
+  // A user's own key always wins: it is direct, unmetered and costs the project nothing.
+  const useOwnKey = !!apiKey;
+  const endpoint = useOwnKey ? ENDPOINT : proxyUrl;
+  if (!endpoint) {
     throw new ApiError(
       'No TypeSafe API key set. Open the PisoCheck options page and paste your key.',
       'NO_KEY'
@@ -91,7 +108,12 @@ async function askJev(listing: Listing): Promise<AnalysisResult> {
   }
 
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (!proxyUrl) headers['Authorization'] = `Bearer ${apiKey}`;
+  if (useOwnKey) {
+    headers['Authorization'] = `Bearer ${apiKey}`;
+  } else {
+    headers['X-PisoCheck-Device'] = await deviceId();
+    if (license) headers['X-PisoCheck-License'] = license;
+  }
 
   const started = Date.now();
   const res = await fetch(endpoint, {
@@ -102,6 +124,16 @@ async function askJev(listing: Listing): Promise<AnalysisResult> {
 
   if (!res.ok) {
     const body = await res.text().catch(() => '');
+    if (res.status === 429) {
+      let message = 'Daily free checks used up. Try again tomorrow.';
+      try {
+        const parsed = JSON.parse(body) as { error?: string };
+        if (parsed.error) message = parsed.error;
+      } catch {
+        /* keep the default */
+      }
+      throw new ApiError(message, 'QUOTA');
+    }
     throw new ApiError(
       res.status === 401
         ? 'TypeSafe rejected the API key (401). Check it in the options page.'
@@ -110,6 +142,9 @@ async function askJev(listing: Listing): Promise<AnalysisResult> {
     );
   }
 
+  const quotaUsed = Number(res.headers.get('X-PisoCheck-Used'));
+  const quotaLimit = Number(res.headers.get('X-PisoCheck-Limit'));
+
   const data = (await res.json()) as SystemOneResponse;
   return {
     ...verdictFrom(data.answers ?? {}, listing),
@@ -117,7 +152,11 @@ async function askJev(listing: Listing): Promise<AnalysisResult> {
     latency_ms: Date.now() - started,
     usage: data.usage ?? null,
     model: data.model || MODEL,
-    at: Date.now()
+    at: Date.now(),
+    quota:
+      Number.isFinite(quotaUsed) && Number.isFinite(quotaLimit) && quotaLimit > 0
+        ? { used: quotaUsed, limit: quotaLimit, plan: res.headers.get('X-PisoCheck-Plan') ?? 'free' }
+        : null
   };
 }
 

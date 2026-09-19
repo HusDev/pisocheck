@@ -143,9 +143,11 @@ export class Panel {
 
   error(message: string, code?: string): void {
     const action =
-      code === 'NO_KEY' || code === 'HTTP_401'
-        ? '<button class="btn" data-act="options">Open settings</button>'
-        : '<button class="btn" data-act="recheck">Retry</button>';
+      code === 'QUOTA'
+        ? '<button class="btn" data-act="options">Add a licence key</button>'
+        : code === 'NO_KEY' || code === 'HTTP_401'
+          ? '<button class="btn" data-act="options">Open settings</button>'
+          : '<button class="btn" data-act="recheck">Retry</button>';
     this.shell(`<div class="msg err">${message}</div><div style="margin-top:8px">${action}</div>`);
   }
 
@@ -256,7 +258,9 @@ export class Panel {
            ${mutedNote}
          </details>
          ${advertiser}`,
-      `<span>${r.cached ? 'cached' : r.latency_ms + ' ms'} \u00b7 ${r.model}</span>
+      `<span>${r.cached ? 'cached' : r.latency_ms + ' ms'} \u00b7 ${r.model}${
+        r.quota ? ` \u00b7 ${r.quota.used}/${r.quota.limit} today` : ''
+      }</span>
          <span class="spacer" style="flex:1"></span>
          <button class="btn" data-act="recheck">Re-check</button>`
     );

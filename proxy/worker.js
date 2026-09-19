@@ -1,36 +1,65 @@
-/* PisoCheck proxy — keeps the TypeSafe key server-side.
-   Deploy on Cloudflare Workers; the extension points at it via the "Proxy endpoint" option.
-   Set the secret with:  wrangler secret put TYPESAFE_API_KEY  */
+/* PisoCheck proxy — the key lives here, never in the extension.
+   Users install the extension and it works: no key, no setup.
+
+   Deploy:  wrangler secret put TYPESAFE_API_KEY && wrangler deploy
+   Quota:   a KV namespace bound as RL, counting checks per anonymous device id.
+
+   Economics, so the limits below are a deliberate choice rather than a guess:
+   Jev bills $0.042 per Mtok of input and one check is ~1.7k tokens, so a check
+   costs about $0.00007 — roughly 14,000 checks per dollar. */
 
 const UPSTREAM = 'https://api.typesafe.ai/v1/systemone';
+const MODEL = 'jev-latest';
 
-// Only this extension may call the proxy. Replace with your published extension id.
+// Only this extension may call the proxy. Replace with your published extension id
+// once the Web Store assigns one; during development every unpacked install differs.
 const ALLOWED_ORIGINS = [/^chrome-extension:\/\/[a-p]{32}$/];
 
-const RATE_LIMIT = 30; // requests per IP per window
-const WINDOW_SECONDS = 3600;
+const FREE_CHECKS_PER_DAY = 15;
+const DAY_SECONDS = 86400;
+// A hard ceiling per device, whatever the plan, so one client cannot run up a bill.
+const MAX_CHECKS_PER_DAY = 300;
+const MAX_BODY_BYTES = 60_000;
 
-function corsHeaders(origin) {
-  return {
-    'Access-Control-Allow-Origin': origin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Max-Age': '86400'
-  };
+const json = (body, status, origin) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...cors(origin) }
+  });
+
+const cors = (origin) => ({
+  'Access-Control-Allow-Origin': origin,
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, X-PisoCheck-Device, X-PisoCheck-License',
+  'Access-Control-Max-Age': '86400'
+});
+
+const originAllowed = (origin) => !!origin && ALLOWED_ORIGINS.some((re) => re.test(origin));
+
+/** Anonymous per-install id minted by the extension. It identifies a browser profile,
+ *  not a person, and clearing storage resets it — which is why the IP counter below
+ *  exists as a backstop rather than this being the only limit. */
+function deviceId(request) {
+  const raw = request.headers.get('X-PisoCheck-Device') || '';
+  return /^[a-z0-9-]{8,64}$/i.test(raw) ? raw : null;
 }
 
-function originAllowed(origin) {
-  return !!origin && ALLOWED_ORIGINS.some((re) => re.test(origin));
+async function plan(env, license) {
+  if (!license || !env.RL) return { name: 'free', limit: FREE_CHECKS_PER_DAY };
+  const record = await env.RL.get(`license:${license}`, 'json');
+  if (!record || (record.expires && record.expires < Date.now())) {
+    return { name: 'free', limit: FREE_CHECKS_PER_DAY };
+  }
+  return { name: record.plan || 'paid', limit: Math.min(record.limit ?? 200, MAX_CHECKS_PER_DAY) };
 }
 
-// Rate limit per IP using a Workers KV namespace bound as RL.
-async function overLimit(env, ip) {
-  if (!env.RL) return false;
-  const key = `rl:${ip}:${Math.floor(Date.now() / 1000 / WINDOW_SECONDS)}`;
-  const used = Number((await env.RL.get(key)) || 0);
-  if (used >= RATE_LIMIT) return true;
-  await env.RL.put(key, String(used + 1), { expirationTtl: WINDOW_SECONDS });
-  return false;
+async function count(env, key, limit) {
+  if (!env.RL) return { used: 0, allowed: true };
+  const bucket = `${key}:${Math.floor(Date.now() / 1000 / DAY_SECONDS)}`;
+  const used = Number((await env.RL.get(bucket)) || 0);
+  if (used >= limit) return { used, allowed: false };
+  await env.RL.put(bucket, String(used + 1), { expirationTtl: DAY_SECONDS });
+  return { used: used + 1, allowed: true };
 }
 
 export default {
@@ -39,46 +68,62 @@ export default {
 
     if (request.method === 'OPTIONS') {
       return originAllowed(origin)
-        ? new Response(null, { status: 204, headers: corsHeaders(origin) })
+        ? new Response(null, { status: 204, headers: cors(origin) })
         : new Response('Forbidden', { status: 403 });
     }
-
     if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
     if (!originAllowed(origin)) return new Response('Forbidden', { status: 403 });
 
+    const device = deviceId(request);
+    if (!device) return json({ error: 'Missing device id.' }, 400, origin);
+
+    const license = request.headers.get('X-PisoCheck-License') || null;
+    const { name: planName, limit } = await plan(env, license);
+
+    // Two counters: the device's daily allowance, and a wider IP ceiling that a
+    // reinstall cannot reset.
     const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-    if (await overLimit(env, ip)) {
-      return new Response(JSON.stringify({ error: 'Rate limit reached. Try again later.' }), {
-        status: 429,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) }
-      });
+    const perDevice = await count(env, `d:${device}`, limit);
+    if (!perDevice.allowed) {
+      return json(
+        {
+          error: `Daily limit reached (${limit} checks on the ${planName} plan).`,
+          code: 'QUOTA',
+          plan: planName,
+          limit
+        },
+        429,
+        origin
+      );
     }
+    const perIp = await count(env, `i:${ip}`, MAX_CHECKS_PER_DAY);
+    if (!perIp.allowed) return json({ error: 'Too many checks from this network today.' }, 429, origin);
 
     let body;
     try {
       body = await request.json();
     } catch {
-      return new Response('Bad JSON', { status: 400, headers: corsHeaders(origin) });
+      return json({ error: 'Bad JSON' }, 400, origin);
     }
-
-    // Never let a caller swap the model or send an oversized payload.
-    if (JSON.stringify(body).length > 60_000) {
-      return new Response('Payload too large', { status: 413, headers: corsHeaders(origin) });
+    if (JSON.stringify(body).length > MAX_BODY_BYTES) {
+      return json({ error: 'Payload too large' }, 413, origin);
     }
-    body.model = 'jev-latest';
+    // Never let a caller choose the model or smuggle in their own questions budget.
+    body.model = MODEL;
 
     const upstream = await fetch(UPSTREAM, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${env.TYPESAFE_API_KEY}`
-      },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.TYPESAFE_API_KEY}` },
       body: JSON.stringify(body)
     });
 
-    return new Response(upstream.body, {
-      status: upstream.status,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) }
-    });
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-PisoCheck-Plan': planName,
+      'X-PisoCheck-Used': String(perDevice.used),
+      'X-PisoCheck-Limit': String(limit),
+      ...cors(origin)
+    };
+    return new Response(upstream.body, { status: upstream.status, headers });
   }
 };
