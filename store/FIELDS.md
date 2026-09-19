@@ -7,15 +7,15 @@ Everything below is copy-paste ready. Graphics are in `store/assets/`.
 ## Product details
 
 **Title from package** — already set from the manifest:
-`PisoCheck — Idealista scam check`
+`PisoCheck — Idealista rental risk check`
 
 **Summary from package** — already set from the manifest:
-`Instant scam and risk probabilities for Idealista rental listings in Barcelona, powered by Jev.`
+`Instant scam and risk scores for Idealista rental listings in Spain, powered by Jev.`
 
 **Description** (paste all of this):
 
 ```
-Finding a long-term flat in Barcelona means opening hundreds of listings, most of which waste your time. PisoCheck reads the listing you are already looking at and tells you, in about a second, whether it is worth contacting.
+Finding a long-term flat in Spain means opening hundreds of listings, most of which waste your time. PisoCheck reads the listing you are already looking at and tells you, in about a second, whether it is worth contacting.
 
 Open any Idealista rental listing and a panel appears with:
 
@@ -27,10 +27,10 @@ Open any Idealista rental listing and a panel appears with:
 WHAT IT LOOKS FOR
 
 • Temporada and seasonal contracts dressed up as long-term rentals
-• Prices too low to be real for that barrio
+• Prices too low to be real for that area
 • Pressure and urgency tactics in the description
 • Requests for money before a viewing, or by transfer, cash or crypto
-• Signs of subletting (relloguer) rather than a real landlord
+• Signs of subletting (subarriendo) rather than a real landlord
 • Adverts that contradict themselves on price, size or terms
 • Copy-pasted or machine-translated text hiding a relisting
 • Missing basics: no photos, no description, no phone number
@@ -146,5 +146,5 @@ make the repo public → Settings → Pages → deploy from `main` → the file 
 | Field | Value |
 | --- | --- |
 | Visibility | `Unlisted` to start — a working link, no public search. Switch to Public later. |
-| Regions | All, or just Spain while it is Barcelona-only |
+| Regions | All, or just Spain |
 | Pricing | Free |

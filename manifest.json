@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "PisoCheck \u2014 Idealista scam check",
+  "name": "PisoCheck \u2014 Idealista rental risk check",
   "version": "0.1.0",
-  "description": "Instant scam and risk probabilities for Idealista rental listings in Barcelona, powered by Jev.",
+  "description": "Instant scam and risk scores for Idealista rental listings in Spain, powered by Jev.",
   "permissions": [
     "storage",
     "activeTab"

@@ -208,7 +208,7 @@ export class Panel {
       l?.advertiser_name || (l?.advertiser_type === 'private' ? 'Private advertiser' : 'Advertiser not named');
     const searchUrl =
       'https://www.google.com/search?q=' +
-      encodeURIComponent((l?.advertiser_name ?? '') + ' inmobiliaria Barcelona opiniones');
+      encodeURIComponent(`${l?.advertiser_name ?? ''} inmobiliaria ${l?.city ?? ''} opiniones`.trim());
     const trustRows = r.trust
       .map(
         (t) => `<div class="factor">

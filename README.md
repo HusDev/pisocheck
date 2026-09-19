@@ -1,6 +1,6 @@
 # PisoCheck
 
-**A Chrome extension that instantly analyses Idealista rental listings in Barcelona and tells you whether they are worth contacting or should be skipped.**
+**A Chrome extension that instantly analyses Idealista rental listings anywhere in Spain and tells you whether they are worth contacting or should be skipped.**
 
 ---
 
@@ -8,13 +8,13 @@
 
 People spend hours every day opening Idealista listings only to discover later that they are scams, illegal sublets, overpriced, or full of red flags.
 
-Housing is still the biggest pain point in Barcelona, and most tools don't help at the exact moment of decision — while you're looking at the listing.
+Housing is the biggest pain point in Spanish cities, and most tools don't help at the exact moment of decision — while you're looking at the listing.
 
 ## The Solution
 
 Install the PisoCheck Chrome extension.
 
-When you open any Idealista long-term rental or room listing in Barcelona, a clean panel appears with an instant risk assessment powered by **Jev**.
+When you open any Idealista long-term rental or room listing, a clean panel appears with an instant risk assessment powered by **Jev**.
 
 No copy-pasting. The analysis happens right on the page.
 
@@ -40,16 +40,16 @@ No copy-pasting. The analysis happens right on the page.
 
 | Factor | What it catches |
 | --- | --- |
-| Price vs. barrio market | Listings priced significantly below market for that barrio |
+| Price vs. local market | Listings priced significantly below market for that neighbourhood and city |
 | Pressure language | Urgency tactics in the description |
 | Temporary / seasonal signals | Contracts structured to bypass long-term protections |
-| Subletting indicators | Possible illegal subletting (*relloguer*) |
+| Subletting indicators | Possible illegal subletting (*subarriendo*, *relloguer*) |
 | Missing or suspicious details | Vague or withheld information |
 | Internal inconsistencies | Price, size and description that don't add up |
 
 ## Target Users
 
-Anyone looking for a long-term flat or room in Barcelona who is tired of wasting time and risking deposits on bad listings.
+Anyone looking for a long-term flat or room in Spain who is tired of wasting time and risking deposits on bad listings.
 
 ---
 
@@ -121,15 +121,17 @@ Three rules exist because the raw score alone gets them wrong:
 - **Questions that need text are not scored when there is no text.** With no description, six
   factors return `n/a` and leave the average rather than inventing a number from nothing.
 
-Measured on real Barcelona listings (`jev-1.13.0`, ~1.6k input tokens, 300–950 ms per call):
+Measured on real listings (`jev-1.13.0`, ~1.6k input tokens, 300–950 ms per call):
 
 | Listing | Risk | Scam | Verdict |
 | --- | --- | --- | --- |
-| Agency temporada studio, Guinardó, 1000 €/34 m² | 25% | 24% | Caution — temporary 98% |
-| Room in shared flat, Raval, 750 €/12 m² | 23% | 23% | Strong candidate |
-| Uniplaces short-stay relisting, Fort Pienc | 46% | 41% | Caution — pay-before-viewing, self-contradicting terms |
+| Agency temporada studio, Barcelona, 1000 €/34 m² | 25% | 24% | Caution — temporary 98% |
+| Room in shared flat, Barcelona, 750 €/12 m² | 23% | 23% | Strong candidate |
+| Uniplaces short-stay relisting, Barcelona | 46% | 41% | Caution — pay-before-viewing, self-contradicting terms |
 | Private flat with no photos, text or phone | 46% | 26% | Caution — nothing to verify |
-| Synthetic scam room, 350 € Eixample | 86% | 94% | Skip |
+| Synthetic scam room, 350 € Barcelona | 86% | 94% | Skip |
+| Scam-shaped flat, 500 €/90 m² Madrid | 84% | 93% | Skip |
+| Agency flat, 1600 €/75 m² Madrid | 9% | 10% | Strong candidate |
 
 ### Extraction is the hard part
 

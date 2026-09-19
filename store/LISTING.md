@@ -1,21 +1,21 @@
 # Chrome Web Store listing — copy and paste
 
 ## Name (45 max)
-PisoCheck — rental risk checks for Idealista
+PisoCheck — Idealista rental risk check
 
 ## Short description (132 max)
-Instant scam and risk scores on Idealista rental listings in Barcelona. Spot temporada
+Instant scam and risk scores on Idealista rental listings in Spain. Spot temporada
 contracts and red flags before you contact.
 
 ## Category
 Productivity
 
 ## Language
-English (add Spanish later — the audience is Barcelona)
+English (add Spanish later — most of the audience reads Spanish)
 
 ## Detailed description
 
-Finding a long-term flat in Barcelona means opening hundreds of listings, most of which
+Finding a long-term flat in Spain means opening hundreds of listings, most of which
 waste your time. PisoCheck reads the listing you are already looking at and tells you,
 in about a second, whether it is worth contacting.
 
@@ -29,10 +29,10 @@ Open any Idealista rental listing and a panel appears with:
 WHAT IT LOOKS FOR
 
 • Temporada and seasonal contracts dressed up as long-term rentals
-• Prices too low to be real for that barrio
+• Prices too low to be real for that area
 • Pressure and urgency tactics in the description
 • Requests for money before a viewing, or by transfer, cash or crypto
-• Signs of subletting (relloguer) rather than a real landlord
+• Signs of subletting (subarriendo) rather than a real landlord
 • Adverts that contradict themselves on price, size or terms
 • Copy-pasted or machine-translated text hiding a relisting
 • Missing basics: no photos, no description, no phone number

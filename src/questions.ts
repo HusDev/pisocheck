@@ -28,9 +28,9 @@ export const QUESTIONS = {
   price_below_market: {
     type: 'noul',
     instructions:
-      'Is the monthly price implausibly low for a rental of this size, type and neighbourhood in this city, to the point of being a red flag rather than a good deal?',
+      'Is the monthly price implausibly low for a rental of this size, type and neighbourhood in this Spanish city, to the point of being a red flag rather than a good deal?',
     criteria: {
-      true: 'Price is far below the realistic market rent for that barrio and size (roughly half or less of what comparable listings ask).',
+      true: 'Price is far below the realistic market rent for that neighbourhood and size (roughly half or less of what comparable listings in the same city ask).',
       false: 'Price is within, or only modestly below, the normal range for that barrio, size and property type.'
     }
   },
@@ -46,7 +46,7 @@ export const QUESTIONS = {
   temporary_seasonal: {
     type: 'noul',
     instructions:
-      'Does this advert signal a temporary or seasonal rental (alquiler de temporada / lloguer de temporada, months-limited, students-only term, mid-term, monthly stays) rather than a standard long-term permanent-residence contract?',
+      'Does this advert signal a temporary or seasonal rental (alquiler de temporada, lloguer de temporada, aluguer de temporada, months-limited, students-only term, mid-term, monthly stays) rather than a standard long-term permanent-residence contract (vivienda habitual) under the LAU?',
     criteria: {
       true: 'Fixed short term, seasonal or monthly framing, stated maximum number of months, tourist or student-season contract.',
       false: 'Standard long-term residential tenancy with no stated time limit.'
@@ -55,7 +55,7 @@ export const QUESTIONS = {
   subletting: {
     type: 'noul',
     instructions:
-      'Are there signs that the advertiser is subletting rather than renting as the owner or an authorised agent — for example the current tenant re-renting rooms (relloguer), a "coliving" operator on someone else\'s lease, or a contract offered by a person who lives there?',
+      'Are there signs that the advertiser is subletting rather than renting as the owner or an authorised agent — for example the current tenant re-renting rooms (subarriendo, relloguer), a "coliving" operator on someone else\'s lease, or a contract offered by a person who lives there?',
     criteria: {
       true: 'Advertiser presents as a tenant, flatmate or intermediary re-renting the property or a room within it.',
       false: 'Advertiser is the owner or an identified professional agency acting for the owner.'
@@ -176,10 +176,10 @@ export const WEIGHTS: Record<RiskKey, number> = {
 // Likewise: every scored question must have a label, or the panel renders "undefined".
 export const LABELS: Record<RiskKey | 'scam', string> = {
   scam: 'Scam likelihood',
-  price_below_market: 'Price too low for the barrio',
+  price_below_market: 'Price too low for the area',
   pressure_language: 'Pressure / urgency language',
   temporary_seasonal: 'Temporary or seasonal contract',
-  subletting: 'Possible subletting (relloguer)',
+  subletting: 'Possible subletting (subarriendo)',
   missing_details: 'Missing or evasive details',
   inconsistencies: 'Inconsistent price / size / description',
   remote_landlord: 'Landlord cannot meet in person',

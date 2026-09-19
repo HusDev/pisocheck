@@ -60,6 +60,7 @@ export type ListingSummary = Pick<
   | 'advertiser_type'
   | 'agency_profile_url'
   | 'agency_has_idealista_profile'
+  | 'city'
   | 'price_eur_month'
   | 'size_m2'
   | 'has_photos'
