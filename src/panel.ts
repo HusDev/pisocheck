@@ -1,6 +1,7 @@
 /* PisoCheck — the on-page panel. Lives in a shadow root so Idealista's CSS can't touch it. */
-(() => {
-  const STYLE = `
+import type { AnalysisResult, Factor } from './types.js';
+
+const STYLE = `
 :host { all: initial; }
 * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 .wrap {
@@ -86,146 +87,153 @@ details.more > summary:hover { color: #334155; }
 }
 `;
 
-  const RISK_COLOR = (v) => (v >= 0.6 ? '#d92d20' : v >= 0.35 ? '#f79009' : '#12b76a');
-  const TRUST_COLOR = (v) => (v >= 0.6 ? '#12b76a' : v >= 0.35 ? '#f79009' : '#98a2b3');
-  const pct = (v) => Math.round(v * 100) + '%';
+const RISK_COLOR = (v: number): string => (v >= 0.6 ? '#d92d20' : v >= 0.35 ? '#f79009' : '#12b76a');
+const TRUST_COLOR = (v: number): string => (v >= 0.6 ? '#12b76a' : v >= 0.35 ? '#f79009' : '#98a2b3');
+const pct = (v: number): string => Math.round(v * 100) + '%';
 
-  const VERDICT_TEXT = {
-    skip: ['Skip this one', 'skip'],
-    caution: ['Proceed with caution', 'caution'],
-    strong: ['Strong candidate', 'strong']
-  };
+const VERDICT_TEXT: Record<AnalysisResult['verdict'], [string, string]> = {
+  skip: ['Skip this one', 'skip'],
+  caution: ['Proceed with caution', 'caution'],
+  strong: ['Strong candidate', 'strong']
+};
 
-  class Panel {
-    constructor() {
-      this.host = document.createElement('div');
-      this.host.id = 'pisocheck-root';
-      this.root = this.host.attachShadow({ mode: 'open' });
-      const style = document.createElement('style');
-      style.textContent = STYLE;
-      this.root.appendChild(style);
-      this.wrap = document.createElement('div');
-      this.wrap.className = 'wrap';
-      this.root.appendChild(this.wrap);
-      document.documentElement.appendChild(this.host);
-      this.onRecheck = () => {};
-    }
+export class Panel {
+  readonly host: HTMLDivElement;
+  private readonly root: ShadowRoot;
+  private readonly wrap: HTMLDivElement;
+  onRecheck: () => void = () => {};
 
-    shell(inner, foot = '') {
-      this.wrap.innerHTML = `
+  constructor() {
+    this.host = document.createElement('div');
+    this.host.id = 'pisocheck-root';
+    this.root = this.host.attachShadow({ mode: 'open' });
+    const style = document.createElement('style');
+    style.textContent = STYLE;
+    this.root.appendChild(style);
+    this.wrap = document.createElement('div');
+    this.wrap.className = 'wrap';
+    this.root.appendChild(this.wrap);
+    document.documentElement.appendChild(this.host);
+  }
+
+  private shell(inner: string, foot = ''): void {
+    this.wrap.innerHTML = `
         <div class="head">
           <span class="brand">PisoCheck</span>
           <span class="spacer"></span>
-          <button class="iconbtn" data-act="collapse" title="Collapse">–</button>
-          <button class="iconbtn" data-act="close" title="Close">×</button>
+          <button class="iconbtn" data-act="collapse" title="Collapse">\u2013</button>
+          <button class="iconbtn" data-act="close" title="Close">\u00d7</button>
         </div>
         <div class="body">${inner}</div>
         ${foot ? `<div class="foot">${foot}</div>` : ''}`;
-      this.wrap.querySelector('[data-act="close"]').onclick = () => this.host.remove();
-      this.wrap.querySelector('[data-act="collapse"]').onclick = () =>
-        this.wrap.classList.toggle('collapsed');
-      const recheck = this.wrap.querySelector('[data-act="recheck"]');
-      if (recheck) recheck.onclick = () => this.onRecheck();
-      const opts = this.wrap.querySelector('[data-act="options"]');
-      if (opts) opts.onclick = () => chrome.runtime.sendMessage({ type: 'pisocheck:openOptions' });
-    }
 
-    loading() {
-      this.shell('<div class="loading"><span class="spin"></span> Asking Jev about this listing…</div>');
-    }
+    const on = (act: string, fn: () => void): void => {
+      const el = this.wrap.querySelector<HTMLElement>(`[data-act="${act}"]`);
+      if (el) el.onclick = fn;
+    };
+    on('close', () => this.host.remove());
+    on('collapse', () => this.wrap.classList.toggle('collapsed'));
+    on('recheck', () => this.onRecheck());
+    on('options', () => void chrome.runtime.sendMessage({ type: 'pisocheck:openOptions' }));
+  }
 
-    error(message, code) {
-      const action =
-        code === 'NO_KEY' || code === 'HTTP_401'
-          ? '<button class="btn" data-act="options">Open settings</button>'
-          : '<button class="btn" data-act="recheck">Retry</button>';
-      this.shell(`<div class="msg err">${message}</div><div style="margin-top:8px">${action}</div>`);
-    }
+  loading(): void {
+    this.shell('<div class="loading"><span class="spin"></span> Asking Jev about this listing\u2026</div>');
+  }
 
-    idle() {
-      this.shell(
-        '<div class="msg">Check this listing for scam and rental risk.</div>' +
-          '<div style="margin-top:8px"><button class="btn" data-act="recheck">Check listing</button></div>'
-      );
-    }
+  error(message: string, code?: string): void {
+    const action =
+      code === 'NO_KEY' || code === 'HTTP_401'
+        ? '<button class="btn" data-act="options">Open settings</button>'
+        : '<button class="btn" data-act="recheck">Retry</button>';
+    this.shell(`<div class="msg err">${message}</div><div style="margin-top:8px">${action}</div>`);
+  }
 
-    result(r) {
-      const [label, cls] = VERDICT_TEXT[r.verdict];
-      const c = RISK_COLOR(r.composite);
-      const circ = 2 * Math.PI * 31;
+  idle(): void {
+    this.shell(
+      '<div class="msg">Check this listing for scam and rental risk.</div>' +
+        '<div style="margin-top:8px"><button class="btn" data-act="recheck">Check listing</button></div>'
+    );
+  }
 
-      const gapNote = r.tooThin
-        ? `<div class="gap"><b>Little to verify:</b> ${r.gaps.join(
-            ', '
-          )}. The risk score reflects that you cannot check this advert, not that something specific is wrong with it.</div>`
-        : '';
-      const reasons = r.reasons.length
-        ? `<ul class="reasons">${r.reasons
-            .map((f) => `<li>${f.label} — ${pct(f.value)}</li>`)
-            .join('')}</ul>`
-        : '<div class="msg" style="margin-top:10px">No individual risk factor stands out.</div>';
+  result(r: AnalysisResult): void {
+    const [label, cls] = VERDICT_TEXT[r.verdict];
+    const c = RISK_COLOR(r.composite);
+    const circ = 2 * Math.PI * 31;
 
-      const factors = r.factors
-        .map((f) =>
-          f.muted
-            ? `<div class="factor muted">
+    const gapNote = r.tooThin
+      ? `<div class="gap"><b>Little to verify:</b> ${r.gaps.join(
+          ', '
+        )}. The risk score reflects that you cannot check this advert, not that something specific is wrong with it.</div>`
+      : '';
+
+    const reasons = r.reasons.length
+      ? `<ul class="reasons">${r.reasons
+          .map((f) => `<li>${f.label} \u2014 ${pct(f.value)}</li>`)
+          .join('')}</ul>`
+      : '<div class="msg" style="margin-top:10px">No individual risk factor stands out.</div>';
+
+    const factorRow = (f: Factor): string =>
+      f.muted
+        ? `<div class="factor muted">
               <span class="fname">${f.label}</span>
               <span class="fval">n/a</span>
               <span class="bar"><i style="width:100%;background:repeating-linear-gradient(90deg,#cbd5e1 0 4px,transparent 4px 8px)"></i></span>
             </div>`
-            : `<div class="factor">
+        : `<div class="factor">
               <span class="fname">${f.label}</span>
               <span class="fval">${pct(f.value)}</span>
               <span class="bar"><i style="width:${Math.max(2, f.value * 100)}%;background:${RISK_COLOR(
-                f.value
-              )}"></i></span>
-            </div>`
-        )
-        .join('');
-      const mutedCount = r.factors.filter((f) => f.muted).length;
-      const mutedNote = mutedCount
-        ? `<div class="note" style="margin-top:8px">${mutedCount} signals cannot be assessed: this advert has no description to read.</div>`
-        : '';
+            f.value
+          )}"></i></span>
+            </div>`;
 
-      const tenancy = r.tenancy
-        ? `<div class="sub" style="margin-top:10px">Tenancy on offer: <b>${r.tenancy.choice.replace(
-            /_/g,
-            ' '
-          )}</b> · confidence ${pct(r.tenancy.confidence)}</div>`
-        : '';
+    const factors = r.factors.map(factorRow).join('');
+    const mutedCount = r.factors.filter((f) => f.muted).length;
+    const mutedNote = mutedCount
+      ? `<div class="note" style="margin-top:8px">${mutedCount} signals cannot be assessed: this advert has no description to read.</div>`
+      : '';
 
-      const l = r.listing || {};
-      const advName = l.advertiser_name || (l.advertiser_type === 'private' ? 'Private advertiser' : 'Advertiser not named');
-      const searchUrl =
-        'https://www.google.com/search?q=' +
-        encodeURIComponent((l.advertiser_name || '') + ' inmobiliaria Barcelona opiniones');
-      const trustRows = (r.trust || [])
-        .map(
-          (t) => `<div class="factor">
+    const tenancy = r.tenancy
+      ? `<div class="sub" style="margin-top:10px">Tenancy on offer: <b>${r.tenancy.choice.replace(
+          /_/g,
+          ' '
+        )}</b> \u00b7 confidence ${pct(r.tenancy.confidence)}</div>`
+      : '';
+
+    const l = r.listing;
+    const advName =
+      l?.advertiser_name || (l?.advertiser_type === 'private' ? 'Private advertiser' : 'Advertiser not named');
+    const searchUrl =
+      'https://www.google.com/search?q=' +
+      encodeURIComponent((l?.advertiser_name ?? '') + ' inmobiliaria Barcelona opiniones');
+    const trustRows = r.trust
+      .map(
+        (t) => `<div class="factor">
               <span class="fname">${t.label}</span>
               <span class="fval">${pct(t.value)}</span>
               <span class="bar"><i style="width:${Math.max(2, t.value * 100)}%;background:${TRUST_COLOR(
-            t.value
-          )}"></i></span>
+          t.value
+        )}"></i></span>
             </div>`
-        )
-        .join('');
-      const advertiser = `<div class="adv">
+      )
+      .join('');
+    const advertiser = `<div class="adv">
           <div class="advname">${advName}
-            <span class="badge ${l.agency_has_idealista_profile ? '' : 'grey'}">${
-        l.agency_has_idealista_profile ? 'Idealista pro profile' : 'no pro profile'
-      }</span>
+            <span class="badge ${l?.agency_has_idealista_profile ? '' : 'grey'}">${
+      l?.agency_has_idealista_profile ? 'Idealista pro profile' : 'no pro profile'
+    }</span>
           </div>
           ${trustRows}
           <div class="links">
-            ${l.agency_profile_url ? `<a href="${l.agency_profile_url}" target="_blank" rel="noopener">Their listings</a>` : ''}
-            ${l.advertiser_name ? `<a href="${searchUrl}" target="_blank" rel="noopener">Search reviews</a>` : ''}
+            ${l?.agency_profile_url ? `<a href="${l.agency_profile_url}" target="_blank" rel="noopener">Their listings</a>` : ''}
+            ${l?.advertiser_name ? `<a href="${searchUrl}" target="_blank" rel="noopener">Search reviews</a>` : ''}
           </div>
           <div class="note">PisoCheck does not verify companies. These are pointers so you can check the advertiser yourself before paying anything.</div>
         </div>`;
 
-      this.shell(
-        `<div class="top">
+    this.shell(
+      `<div class="top">
            <div class="ring">
              <svg width="74" height="74">
                <circle cx="37" cy="37" r="31" fill="none" stroke="#eef1f5" stroke-width="7"></circle>
@@ -248,12 +256,9 @@ details.more > summary:hover { color: #334155; }
            ${mutedNote}
          </details>
          ${advertiser}`,
-        `<span>${r.cached ? 'cached' : r.latency_ms + ' ms'} · ${r.model}</span>
+      `<span>${r.cached ? 'cached' : r.latency_ms + ' ms'} \u00b7 ${r.model}</span>
          <span class="spacer" style="flex:1"></span>
          <button class="btn" data-act="recheck">Re-check</button>`
-      );
-    }
+    );
   }
-
-  window.__pisocheckPanel = Panel;
-})();
+}

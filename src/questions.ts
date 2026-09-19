@@ -1,6 +1,19 @@
 // The single Jev request behind every verdict: one narrow judgment per question,
 // all asked together over the same listing state.
+import type {
+  Answer,
+  Factor,
+  Listing,
+  Question,
+  TrustSignal,
+  Verdict,
+  VerdictResult
+} from './types.js';
+
 export const MODEL = 'jev-latest';
+
+/** `as const satisfies` keeps the literal key union while still checking each shape,
+ *  so WEIGHTS and LABELS below cannot name a question that does not exist. */
 
 export const QUESTIONS = {
   scam: {
@@ -134,10 +147,20 @@ export const QUESTIONS = {
       unclear: 'The advert does not make the type of tenancy identifiable.'
     }
   }
-};
+} as const satisfies Record<string, Question>;
+
+export type QuestionKey = keyof typeof QUESTIONS;
+/** Questions that carry weight in the risk score. */
+export type RiskKey = Exclude<
+  QuestionKey,
+  'advertiser_identifiable' | 'known_agency_brand' | 'long_term_fit' | 'scam'
+>;
+export type TrustKey = 'advertiser_identifiable' | 'known_agency_brand';
+export type TenancyChoice = keyof (typeof QUESTIONS)['long_term_fit']['criteria'];
 
 // Risk policy lives in code, not in the model: weights and thresholds are ours to tune.
-export const WEIGHTS = {
+// Typed as a complete Record, so adding a risk question without weighting it is an error.
+export const WEIGHTS: Record<RiskKey, number> = {
   payment_demand: 0.18,
   price_below_market: 0.16,
   pressure_language: 0.14,
@@ -150,7 +173,8 @@ export const WEIGHTS = {
   text_quality: 0.05
 };
 
-export const LABELS = {
+// Likewise: every scored question must have a label, or the panel renders "undefined".
+export const LABELS: Record<RiskKey | 'scam', string> = {
   scam: 'Scam likelihood',
   price_below_market: 'Price too low for the barrio',
   pressure_language: 'Pressure / urgency language',
@@ -164,14 +188,14 @@ export const LABELS = {
   text_quality: 'Copy-pasted or machine-translated text'
 };
 
-export const TRUST_LABELS = {
+export const TRUST_LABELS: Record<TrustKey, string> = {
   advertiser_identifiable: 'Advertiser is identifiable',
   known_agency_brand: 'Looks like an established agency'
 };
 
 // These questions can only be answered from the advert's own text. With no description
 // there is nothing to read, so their answers are noise and must not reach the score.
-const TEXT_ONLY = [
+const TEXT_ONLY: readonly RiskKey[] = [
   'pressure_language',
   'text_quality',
   'inconsistencies',
@@ -182,26 +206,31 @@ const TEXT_ONLY = [
 
 // How much unverifiability alone is worth. A listing you cannot check carries real risk
 // to the reader even when no single factor fires.
-const GAP_FLOOR = { 0: 0, 1: 0.22, 2: 0.36, 3: 0.46 };
+const GAP_FLOOR: Record<number, number> = { 0: 0, 1: 0.22, 2: 0.36, 3: 0.46 };
 
-export function verdictFrom(answers, listing = {}) {
-  const noul = (k) => (answers[k] && typeof answers[k].noul === 'number' ? answers[k].noul : 0);
+type Answers = Partial<Record<QuestionKey, Answer>>;
+
+export function verdictFrom(answers: Answers, listing: Partial<Listing> = {}): VerdictResult {
+  const noul = (k: QuestionKey): number => {
+    const a = answers[k];
+    return a && a.type === 'noul' ? a.noul : 0;
+  };
   const scam = noul('scam');
 
   const noText = listing.has_description === false;
-  const muted = noText ? TEXT_ONLY : [];
-  const usable = (key) => !muted.includes(key);
+  const muted: readonly RiskKey[] = noText ? TEXT_ONLY : [];
+  const usable = (key: RiskKey): boolean => !muted.includes(key);
 
   let weighted = 0;
   let total = 0;
-  for (const [key, w] of Object.entries(WEIGHTS)) {
+  for (const key of Object.keys(WEIGHTS) as RiskKey[]) {
     if (!usable(key)) continue;
-    weighted += noul(key) * w;
-    total += w;
+    weighted += noul(key) * WEIGHTS[key];
+    total += WEIGHTS[key];
   }
   weighted = total ? weighted / total : 0;
 
-  const gaps = [];
+  const gaps: string[] = [];
   if (listing.has_photos === false) gaps.push('no photos');
   if (listing.has_description === false) gaps.push('no description');
   if (listing.contact_phone_available === false) gaps.push('no phone number');
@@ -209,19 +238,20 @@ export function verdictFrom(answers, listing = {}) {
 
   const evidence = 0.6 * scam + 0.4 * weighted;
   // The ring must never read "low risk" on an advert nobody can verify.
-  const composite = Math.max(evidence, GAP_FLOOR[Math.min(gaps.length, 3)] || 0);
+  const composite = Math.max(evidence, GAP_FLOOR[Math.min(gaps.length, 3)] ?? 0);
 
-  let verdict = 'strong';
+  let verdict: Verdict = 'strong';
   if (scam >= 0.6 || composite >= 0.5) verdict = 'skip';
   else if (scam >= 0.3 || composite >= 0.25) verdict = 'caution';
 
   // A clearly temporary or tourist tenancy is never a strong candidate for someone
   // looking for a long-term home, however clean the rest of the listing is.
-  const tenancyChoice = answers.long_term_fit && answers.long_term_fit.choice;
+  const tenancyAnswer = answers.long_term_fit;
+  const tenancy = tenancyAnswer && tenancyAnswer.type === 'choice' ? tenancyAnswer : null;
   const shortTerm =
     noul('temporary_seasonal') >= 0.7 ||
-    tenancyChoice === 'temporary_or_seasonal' ||
-    tenancyChoice === 'tourist_or_short_stay';
+    tenancy?.choice === 'temporary_or_seasonal' ||
+    tenancy?.choice === 'tourist_or_short_stay';
   if (shortTerm && verdict === 'strong') verdict = 'caution';
 
   // An advert with no photos and no text is not a safe bet, it is an unjudgeable one.
@@ -230,18 +260,17 @@ export function verdictFrom(answers, listing = {}) {
 
   // Scam is shown alongside the weighted factors, but only the weighted ones drive `weighted`.
   // Muted factors keep their place in the list, marked as unassessable rather than scored.
-  const factors = ['scam', ...Object.keys(WEIGHTS)]
+  const riskKeys: (RiskKey | 'scam')[] = ['scam', ...(Object.keys(WEIGHTS) as RiskKey[])];
+  const factors: Factor[] = riskKeys
     .map((key) => ({
       key,
       label: LABELS[key],
       value: noul(key),
-      muted: !usable(key)
+      muted: key !== 'scam' && !usable(key)
     }))
     .sort((a, b) => (a.muted === b.muted ? b.value - a.value : a.muted ? 1 : -1));
 
-  const tenancy = answers.long_term_fit || null;
-
-  const trust = Object.keys(TRUST_LABELS).map((key) => ({
+  const trust: TrustSignal[] = (Object.keys(TRUST_LABELS) as TrustKey[]).map((key) => ({
     key,
     label: TRUST_LABELS[key],
     value: noul(key)

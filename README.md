@@ -55,22 +55,37 @@ Anyone looking for a long-term flat or room in Barcelona who is tired of wasting
 
 ## Install (unpacked)
 
-1. `chrome://extensions` → enable **Developer mode**
-2. **Load unpacked** → select this folder
+1. `npm install && npm run build`
+2. `chrome://extensions` → enable **Developer mode** → **Load unpacked** → select **`dist/`**
 3. Click the PisoCheck icon → **Options**, paste your TypeSafe API key (console.typesafe.ai/settings/keys), save
 4. Open any Idealista listing — the panel analyses it automatically
 
 ## Project layout
 
+Written in TypeScript, bundled with esbuild. **`dist/` is what Chrome loads**, not the repo root.
+
 ```
-manifest.json        MV3 manifest
-src/extract.js       Reads the listing off the page (utag_data first, DOM selectors as fallback)
-src/questions.js     The Jev questions + the risk policy (weights, thresholds, labels)
-src/background.js    Service worker: holds the key, one call to api.typesafe.ai, caches + history
-src/panel.js         The on-page panel (shadow DOM, no clash with Idealista CSS)
-src/content.js       Glue: detect listing page → extract → ask → render, re-runs on SPA navigation
-src/options.html/js  API key, optional proxy, auto-run toggle, recent checks
+src/types.ts         Listing, the TypeSafe API shapes, verdict and message types
+src/questions.ts     The Jev questions + the risk policy (weights, thresholds, labels)
+src/extract.ts       Reads the listing off the page (utag_data first, DOM selectors as fallback)
+src/background.ts    Service worker: holds the key, one call to api.typesafe.ai, caches + history
+src/panel.ts         The on-page panel (shadow DOM, no clash with Idealista CSS)
+src/content.ts       Glue: detect listing page → extract → ask → render, re-runs on SPA navigation
+src/options.html/ts  API key, optional proxy, auto-run toggle, recent checks
+scripts/build.mjs    esbuild bundle + static copy into dist/
 ```
+
+```bash
+npm install
+npm run build       # → dist/
+npm run watch       # rebuild on save (still reload the extension in chrome://extensions)
+npm run typecheck   # tsc --noEmit
+npm run check       # typecheck then build
+```
+
+`QUESTIONS` is declared `as const satisfies Record<string, Question>`, so its keys form a
+union that `WEIGHTS` and `LABELS` must both cover. Adding a risk question without weighting
+or labelling it is a compile error rather than an `undefined` rendered in the panel.
 
 ## The Jev call
 

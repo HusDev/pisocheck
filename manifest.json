@@ -11,10 +11,10 @@
     "https://api.typesafe.ai/*"
   ],
   "background": {
-    "service_worker": "src/background.js",
+    "service_worker": "background.js",
     "type": "module"
   },
-  "options_page": "src/options.html",
+  "options_page": "options.html",
   "action": {
     "default_title": "PisoCheck",
     "default_icon": {
@@ -36,9 +36,7 @@
         "https://www.idealista.pt/*"
       ],
       "js": [
-        "src/extract.js",
-        "src/panel.js",
-        "src/content.js"
+        "content.js"
       ],
       "run_at": "document_idle"
     }

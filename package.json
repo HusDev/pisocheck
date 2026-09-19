@@ -1,0 +1,18 @@
+{
+  "name": "pisocheck",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Chrome extension scoring Idealista rental listings with Jev",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run build"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.287",
+    "esbuild": "^0.28.2",
+    "typescript": "^5.7.0"
+  }
+}
