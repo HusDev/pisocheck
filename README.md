@@ -144,12 +144,13 @@ separately — they differ in number formatting and wording.
 (`proxy/`) that holds the key as a secret and meters a free daily allowance per install.
 The extension ships with no credentials in it.
 
-Three ways it can run:
+**PisoCheck is free.** No account, no key, no sign-up — install it and it works, up to
+100 checks a day per browser. Bringing your own TypeSafe key is optional and only useful
+if you want no limit at all.
 
 | Mode | Who pays | Setup for the user |
 | --- | --- | --- |
-| Shared proxy (default) | You | None — install and go, 15 checks/day |
-| Licence key | You, higher allowance | Paste a key in options |
+| Shared proxy (default) | The project | None — 100 checks/day |
 | Own API key | The user, unmetered | Paste a TypeSafe key in options |
 
 A user's own key always takes priority and goes straight to `api.typesafe.ai`, never

@@ -2,7 +2,6 @@ name = "pisocheck-proxy"
 main = "worker.js"
 compatibility_date = "2025-09-01"
 
-# Rate-limit counters. Create with: wrangler kv namespace create RL
-# [[kv_namespaces]]
-# binding = "RL"
-# id = "<namespace-id>"
+# Quota counters and licence rows.
+# `./deploy.sh` creates the namespace and appends the binding here on first run,
+# or do it by hand:  npx wrangler kv namespace create RL

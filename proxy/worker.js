@@ -15,10 +15,16 @@ const MODEL = 'jev-latest';
 // once the Web Store assigns one; during development every unpacked install differs.
 const ALLOWED_ORIGINS = [/^chrome-extension:\/\/[a-p]{32}$/];
 
-const FREE_CHECKS_PER_DAY = 15;
+// Free, and generous enough that a real user never meets the ceiling: a person
+// screening flats hard might do 30 checks in an evening. These numbers exist to stop
+// a script, not a searcher.
+const FREE_CHECKS_PER_DAY = 100;
 const DAY_SECONDS = 86400;
-// A hard ceiling per device, whatever the plan, so one client cannot run up a bill.
-const MAX_CHECKS_PER_DAY = 300;
+// A wider ceiling per network, which reinstalling cannot reset.
+const MAX_CHECKS_PER_IP_PER_DAY = 1000;
+// A whole-project budget cap. 20,000 checks is about $1.40 of Jev a day, so a viral
+// morning costs the price of a coffee instead of a surprise. Raise it deliberately.
+const GLOBAL_DAILY_CAP = 20000;
 const MAX_BODY_BYTES = 60_000;
 
 const json = (body, status, origin) =>
@@ -44,13 +50,15 @@ function deviceId(request) {
   return /^[a-z0-9-]{8,64}$/i.test(raw) ? raw : null;
 }
 
+/** Everyone is on the free plan. The licence lookup stays because the wiring is
+ *  already there and costs nothing, in case a higher tier is ever worth selling. */
 async function plan(env, license) {
   if (!license || !env.RL) return { name: 'free', limit: FREE_CHECKS_PER_DAY };
   const record = await env.RL.get(`license:${license}`, 'json');
   if (!record || (record.expires && record.expires < Date.now())) {
     return { name: 'free', limit: FREE_CHECKS_PER_DAY };
   }
-  return { name: record.plan || 'paid', limit: Math.min(record.limit ?? 200, MAX_CHECKS_PER_DAY) };
+  return { name: record.plan || 'plus', limit: record.limit ?? 500 };
 }
 
 async function count(env, key, limit) {
@@ -87,7 +95,7 @@ export default {
     if (!perDevice.allowed) {
       return json(
         {
-          error: `Daily limit reached (${limit} checks on the ${planName} plan).`,
+          error: `That is ${limit} checks today — the daily limit. Back tomorrow.`,
           code: 'QUOTA',
           plan: planName,
           limit
@@ -96,8 +104,17 @@ export default {
         origin
       );
     }
-    const perIp = await count(env, `i:${ip}`, MAX_CHECKS_PER_DAY);
+    const perIp = await count(env, `i:${ip}`, MAX_CHECKS_PER_IP_PER_DAY);
     if (!perIp.allowed) return json({ error: 'Too many checks from this network today.' }, 429, origin);
+
+    const global = await count(env, 'g:all', Number(env.GLOBAL_DAILY_CAP) || GLOBAL_DAILY_CAP);
+    if (!global.allowed) {
+      return json(
+        { error: 'PisoCheck has hit its daily cap. Back tomorrow.', code: 'GLOBAL_CAP' },
+        429,
+        origin
+      );
+    }
 
     let body;
     try {

@@ -143,8 +143,8 @@ export class Panel {
 
   error(message: string, code?: string): void {
     const action =
-      code === 'QUOTA'
-        ? '<button class="btn" data-act="options">Add a licence key</button>'
+      code === 'QUOTA' || code === 'GLOBAL_CAP'
+        ? '<button class="btn" data-act="recheck">Try again</button>'
         : code === 'NO_KEY' || code === 'HTTP_401'
           ? '<button class="btn" data-act="options">Open settings</button>'
           : '<button class="btn" data-act="recheck">Retry</button>';
@@ -259,7 +259,9 @@ export class Panel {
          </details>
          ${advertiser}`,
       `<span>${r.cached ? 'cached' : r.latency_ms + ' ms'} \u00b7 ${r.model}${
-        r.quota ? ` \u00b7 ${r.quota.used}/${r.quota.limit} today` : ''
+        r.quota && r.quota.used > r.quota.limit * 0.8
+          ? ` \u00b7 ${r.quota.used}/${r.quota.limit} today`
+          : ''
       }</span>
          <span class="spacer" style="flex:1"></span>
          <button class="btn" data-act="recheck">Re-check</button>`

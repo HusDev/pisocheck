@@ -14,12 +14,14 @@ interface HistoryEntry {
   scam: number;
 }
 
+let license = '';
+
 void chrome.storage.sync
   .get(['apiKey', 'proxyUrl', 'autoRun', 'license'])
-  .then(({ apiKey = '', proxyUrl = '', autoRun = true, license = '' }: Partial<Settings>) => {
+  .then(({ apiKey = '', proxyUrl = '', autoRun = true, license: stored = '' }: Partial<Settings>) => {
+    license = stored;
     $<HTMLInputElement>('apiKey').value = apiKey;
     $<HTMLInputElement>('proxyUrl').value = proxyUrl;
-    $<HTMLInputElement>('license').value = license;
     $<HTMLInputElement>('autoRun').checked = autoRun !== false;
   });
 
@@ -28,7 +30,7 @@ $<HTMLButtonElement>('save').onclick = async () => {
     apiKey: $<HTMLInputElement>('apiKey').value.trim(),
     proxyUrl: $<HTMLInputElement>('proxyUrl').value.trim(),
     autoRun: $<HTMLInputElement>('autoRun').checked,
-    license: $<HTMLInputElement>('license').value.trim()
+    license
   } satisfies Settings);
   const status = $('status');
   status.textContent = 'Saved';

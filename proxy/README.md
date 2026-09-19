@@ -28,14 +28,22 @@ Jev bills **$0.042 per Mtok of input**; output tokens are free. One PisoCheck ca
 | One dollar | ~14,000 | $1 |
 | 1,000 users × 20 checks/day | 20,000/day | ~$43/month |
 
-The free tier is cheap enough that quotas exist to stop abuse, not to control cost.
+Cheap enough that the product is free and the limits exist to stop abuse, not to
+control cost.
 
 ## Limits
 
-- **15 free checks per device per day** (`FREE_CHECKS_PER_DAY`)
-- **300 per IP per day** as a ceiling a reinstall cannot reset
-- Origin locked to the extension id; the model is forced server-side so a caller
-  cannot swap it
+Free for everyone, no account, no key. The limits are there to stop a script, not a
+flat-hunter:
+
+| Limit | Value | Why |
+| --- | --- | --- |
+| Per device / day | 100 | A hard evening of searching is ~30 checks |
+| Per IP / day | 1,000 | A reinstall cannot reset this |
+| Whole project / day | 20,000 (~$1.40) | A viral morning costs a coffee, not a surprise |
+
+Raise the project cap with a `GLOBAL_DAILY_CAP` var in `wrangler.toml` once you know
+what real traffic looks like.
 
 The device id is a random UUID minted in the extension and stored locally. It
 identifies a browser profile, never a person — no account, no email, nothing
