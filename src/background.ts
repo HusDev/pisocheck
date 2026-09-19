@@ -13,7 +13,7 @@ import type {
 // Where checks go when the user has set nothing. Point this at your deployed Worker
 // and the extension works on install: no key, no setup. Direct calls to TypeSafe
 // happen only when someone supplies their own key in the options page.
-const DEFAULT_PROXY = '';
+const DEFAULT_PROXY = 'https://pisocheck-proxy.hussein-saad-hasan.workers.dev';
 const ENDPOINT = 'https://api.typesafe.ai/v1/systemone';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const HISTORY_MAX = 50;

@@ -3,6 +3,8 @@
 Holds the TypeSafe key so the extension can ship publicly. Users install it and it
 works — no key, no account, no setup.
 
+**Live:** `https://pisocheck-proxy.hussein-saad-hasan.workers.dev`
+
 ## Deploy
 
 ```bash
@@ -13,8 +15,8 @@ wrangler secret put TYPESAFE_API_KEY     # paste the key
 wrangler deploy
 ```
 
-Put the resulting URL into `DEFAULT_PROXY` in `src/background.ts`, rebuild, and the
-extension uses it for everyone. Replace `ALLOWED_ORIGINS` in `worker.js` with your
+Put the resulting URL into `DEFAULT_PROXY` in `src/background.ts` **and into
+`host_permissions` in `manifest.json`**, rebuild, and the extension uses it for everyone. Replace `ALLOWED_ORIGINS` in `worker.js` with your
 published extension id once the Web Store assigns one.
 
 ## What it costs

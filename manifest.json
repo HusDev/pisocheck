@@ -8,7 +8,8 @@
     "activeTab"
   ],
   "host_permissions": [
-    "https://api.typesafe.ai/*"
+    "https://api.typesafe.ai/*",
+    "https://pisocheck-proxy.hussein-saad-hasan.workers.dev/*"
   ],
   "background": {
     "service_worker": "background.js",
