@@ -51,14 +51,6 @@ No copy-pasting. The analysis happens right on the page.
 
 Anyone looking for a long-term flat or room in Barcelona who is tired of wasting time and risking deposits on bad listings.
 
-## Why This Is Strong for HackBarna
-
-- Extremely local and relevant
-- Uses the brand-new Jev model
-- A Chrome extension feels like a real product
-- Easy and impressive to demo live — just open Idealista and show the scores appearing
-- Clear value in under 30 seconds
-
 ---
 
 ## Install (unpacked)
