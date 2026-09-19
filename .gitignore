@@ -1,0 +1,15 @@
+# Never commit credentials — the TypeSafe key belongs in chrome.storage or a Worker secret
+.env
+.env.*
+!.env.example
+*.key
+secrets.json
+src/local-key.js
+
+# Build artefacts
+*.zip
+node_modules/
+dist/
+
+# OS
+.DS_Store

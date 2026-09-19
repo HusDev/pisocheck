@@ -1,0 +1,8 @@
+name = "pisocheck-proxy"
+main = "worker.js"
+compatibility_date = "2025-09-01"
+
+# Rate-limit counters. Create with: wrangler kv namespace create RL
+# [[kv_namespaces]]
+# binding = "RL"
+# id = "<namespace-id>"
